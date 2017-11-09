@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 # Training settings
+# Read args
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                     help='input batch size for training (default: 64)')
@@ -26,20 +27,27 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
 args = parser.parse_args()
+
+# Is Cuda available?
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+# Initialize CPU and GPU by random values (?)
 torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-
+# Keywords args
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+
+# Loads data
 train_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=True, download=True,
                    transform=transforms.Compose([
+# Tensor is a liner object that includes scalar, vector or matrix.
                        transforms.ToTensor(),
                        transforms.Normalize((0.1307,), (0.3081,))
                    ])),
+# 1000 data and 100 batch_size require 10 epochs for 1 iteration
     batch_size=args.batch_size, shuffle=True, **kwargs)
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, transform=transforms.Compose([
@@ -48,17 +56,21 @@ test_loader = torch.utils.data.DataLoader(
                    ])),
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+# NN design (?)
+# How conv1 and conv2 connect (?) full connect?
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+# What is drop...
         self.conv2_drop = nn.Dropout2d()
+# What is fc1 (?) weight?
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
+# What is F (?)
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
         x = x.view(-1, 320)
@@ -71,6 +83,7 @@ model = Net()
 if args.cuda:
     model.cuda()
 
+# What (?)
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
 def train(epoch):
