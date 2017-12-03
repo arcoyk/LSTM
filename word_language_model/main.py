@@ -147,13 +147,16 @@ def evaluate(data_source):
 
 
 def train():
-    # Turn on training mode which enables dropout.
+    # Turn on training mode which enables dropout and BN.
     model.train()
     total_loss = 0
     start_time = time.time()
     # A token is a numerical representation of a word
     # number of unique token
+    # dictionary = [a b c d a]
+    # dictionary.ntokens = 4
     ntokens = len(corpus.dictionary)
+    # ============ <<<<<<<<<<<<<<<<< 
     hidden = model.init_hidden(args.batch_size)
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
         data, targets = get_batch(train_data, i)
@@ -183,12 +186,14 @@ def train():
             start_time = time.time()
 
 # Loop over epochs.
+# lr = learning rate
 lr = args.lr
 best_val_loss = None
 
 # At any point you can hit Ctrl + C to break out of training early.
 try:
-    # epochs = iterations over all data
+    # epochs = number of times for learning full data.
+    # 2 epochs use full data twice.
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
         train()
@@ -207,6 +212,7 @@ try:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
 except KeyboardInterrupt:
+    # Oh
     print('-' * 89)
     print('Exiting from training early')
 

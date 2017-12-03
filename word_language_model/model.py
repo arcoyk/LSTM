@@ -1,4 +1,5 @@
 import torch.nn as nn
+# Autograd: calc gradient of loss function
 from torch.autograd import Variable
 
 class RNNModel(nn.Module):
