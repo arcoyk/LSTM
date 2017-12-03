@@ -60,6 +60,9 @@ corpus = data.Corpus(args.data)
 
 # Starting from sequential data, batchify arranges the dataset into columns.
 # For instance, with the alphabet as the sequence and batch size 4, we'd get
+# [ a g m s --- f l r x]
+#     |
+#     v
 # ┌ a g m s ┐
 # │ b h n t │
 # │ c i o u │
@@ -145,7 +148,6 @@ def evaluate(data_source):
         hidden = repackage_hidden(hidden)
     return total_loss[0] / len(data_source)
 
-
 def train():
     # Turn on training mode which enables dropout and BN.
     model.train()
@@ -190,39 +192,63 @@ def train():
 lr = args.lr
 best_val_loss = None
 
-# At any point you can hit Ctrl + C to break out of training early.
-try:
-    # epochs = number of times for learning full data.
-    # 2 epochs use full data twice.
-    for epoch in range(1, args.epochs+1):
-        epoch_start_time = time.time()
-        train()
-        val_loss = evaluate(val_data)
+def run_train():
+    # At any point you can hit Ctrl + C to break out of training early.
+    try:
+        # epochs = number of times for learning full data.
+        # 2 epochs use full data twice.
+        for epoch in range(1, args.epochs+1):
+            epoch_start_time = time.time()
+            train()
+            val_loss = evaluate(val_data)
+            print('-' * 89)
+            print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+                    'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
+                                               val_loss, math.exp(val_loss)))
+            print('-' * 89)
+            # Save the model if the validation loss is the best we've seen so far.
+            if not best_val_loss or val_loss < best_val_loss:
+                with open(args.save, 'wb') as f:
+                    torch.save(model, f)
+                best_val_loss = val_loss
+            else:
+                # Anneal the learning rate if no improvement has been seen in the validation dataset.
+                lr /= 4.0
+    except KeyboardInterrupt:
+        # Oh
         print('-' * 89)
-        print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                           val_loss, math.exp(val_loss)))
-        print('-' * 89)
-        # Save the model if the validation loss is the best we've seen so far.
-        if not best_val_loss or val_loss < best_val_loss:
-            with open(args.save, 'wb') as f:
-                torch.save(model, f)
-            best_val_loss = val_loss
-        else:
-            # Anneal the learning rate if no improvement has been seen in the validation dataset.
-            lr /= 4.0
-except KeyboardInterrupt:
-    # Oh
-    print('-' * 89)
-    print('Exiting from training early')
+        print('Exiting from training early')
+
+    # Load the best saved model.
+    with open(args.save, 'rb') as f:
+        model = torch.load(f)
+
+    # Run on test data.
+    test_loss = evaluate(test_data)
+    print('=' * 89)
+    print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
+        test_loss, math.exp(test_loss)))
+    print('=' * 89)
 
 # Load the best saved model.
 with open(args.save, 'rb') as f:
     model = torch.load(f)
 
-# Run on test data.
-test_loss = evaluate(test_data)
-print('=' * 89)
-print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-    test_loss, math.exp(test_loss)))
-print('=' * 89)
+# Want to get next element by elements within a previous window.
+def run(model):
+    ntokens = len(corpus.dictionary)
+    hidden = model.init_hidden(args.batch_size)
+    for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
+        # batch is a matrix, why...
+        data, targets = get_batch(train_data, i)
+        # Starting each batch, we detach the hidden state from how it was previously produced.
+        # If we didn't, the model would try backpropagating all the way to start of the dataset.
+        hidden = repackage_hidden(hidden)
+        model.zero_grad()
+        output, hidden = model(data, hidden)
+ 
+run(model)
+
+
+
+
