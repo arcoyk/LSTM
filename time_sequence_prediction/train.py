@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 class Sequence(nn.Module):
     def __init__(self):
         super(Sequence, self).__init__()
+        # LSTMCell(input_size, hidden_size)
+        # Why?
         self.lstm1 = nn.LSTMCell(1, 51)
         self.lstm2 = nn.LSTMCell(51, 1)
 
@@ -20,7 +22,6 @@ class Sequence(nn.Module):
         c_t = Variable(torch.zeros(input.size(0), 51).double(), requires_grad=False)
         h_t2 = Variable(torch.zeros(input.size(0), 1).double(), requires_grad=False)
         c_t2 = Variable(torch.zeros(input.size(0), 1).double(), requires_grad=False)
-
         for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
             h_t, c_t = self.lstm1(input_t, (h_t, c_t))
             h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
@@ -32,25 +33,27 @@ class Sequence(nn.Module):
         outputs = torch.stack(outputs, 1).squeeze(2)
         return outputs
 
-
-
 if __name__ == '__main__':
     # set random seed to 0
     np.random.seed(0)
     torch.manual_seed(0)
     # load data and make training set
     data = torch.load('traindata.pt')
+    # data = [[0.2, 0.1 ... 0.2], [0.2, 0.4 ... 0.23] ... [0.1, 0.3 ... 0.5]]
+    # The last num (0.2, 0.23 ... 0.5) is the target to predict
     input = Variable(torch.from_numpy(data[3:, :-1]), requires_grad=False)
     target = Variable(torch.from_numpy(data[3:, 1:]), requires_grad=False)
     test_input = Variable(torch.from_numpy(data[:3, :-1]), requires_grad=False)
     test_target = Variable(torch.from_numpy(data[:3, 1:]), requires_grad=False)
     # build the model
     seq = Sequence()
+    # nn.Module (parent class) .double() convert float into double
     seq.double()
     criterion = nn.MSELoss()
     # use LBFGS as optimizer since we can load the whole data to train
     optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
     #begin to train
+    # 15 iterations
     for i in range(15):
         print('STEP: ', i)
         def closure():

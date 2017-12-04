@@ -32,3 +32,8 @@ LSTM Layer:
 LSTM Block: 
 num_units: Tensorflow実装におけるLSTMのforgetゲートに長期記憶を保持するための隠れ層の数。
 
+Pytorch
+Variable: テンソル、勾配、勾配関数を保持するインスタンス。チェーンになる。
+from_numpy: numpy.ndarrayからテンソルを作る関数。
+MSELoss: mean square error
+
