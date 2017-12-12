@@ -6,10 +6,11 @@ import seaborn as sns
 import sys
 sys.path.insert(0, '/users/yui/projects/ml')
 from vis.losslog import Losslog
+import random
 
 # N is batch size; D_in is input dimension;
 # H is hidden dimension; D_out is output dimension.
-N, D_in, H, D_out = 64, 1000, 100, 10
+N, D_in, H, D_out = 64, 100, 100, 1
 
 # Create random Tensors to hold inputs and outputs, and wrap them in Variables.
 x = Variable(torch.randn(N, D_in))
@@ -50,3 +51,4 @@ for t in range(500):
   # Calling the step function on an Optimizer makes an update to its parameters
   optimizer.step()
 losslog.show()
+
