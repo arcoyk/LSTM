@@ -31,9 +31,20 @@ LSTM Cell:
 LSTM Layer: 
 LSTM Block: 
 num_units: Tensorflow実装におけるLSTMのforgetゲートに長期記憶を保持するための隠れ層の数。
+backpropagation: loss関数の勾配をそれぞれの重みについて計算すること。
 
 Pytorch
-Variable: テンソル、勾配、勾配関数を保持するインスタンス。チェーンになる。
+bach: データ列全体
+mini-bach: データ列を複数集めたもの（複数のサンプル）
+tensor: GPU処理が可能なn次元のベクトル
+torch.FloatTensor: テンソルの型。torch.cuda.FloatTensorでGPU対応。
+Variable: テンソル、勾配、勾配関数を保持するインスタンス。variable.dataはテンソル（torch.FloatTensor）で、variable.grad.dataで勾配。計算グラフを動的に生成する機能があり、loss = x.mm(w1).clamp().mm(w2).get_loss(y)として出てきたloss(Variable)はx, w1, w2（これもすべてVariable）をたどれ、バックプロパゲーションができる（loss.backward())。Tensorflowは計算グラフを作る処理と計算（重み付け、フォーワード）をする処理が分かれており、計算の最適化・分散処理が可能。逆に言えばPyTorchはunrolling（フォーワード中にネットを編集する）プログラミング上の柔軟性があるが、分散処理ができないため高速化ではTensorFlowに勝てない。計算グラフを作るところは似ているので、知識はそのまま使えそう。
 from_numpy: numpy.ndarrayからテンソルを作る関数。
 MSELoss: mean square error
+nn.Modules: ニューラルネットの層に基本的な関数（フォーワードなど）を加えたクラス。__call__オペレターをオバーライドしておりmodule_name(variables)でフォーワードできる。アウトプットはVariable。model_name.parameters()で重み付けのVariableが取り出せる。
+nn.Sequential: nn.Sequential(nn.Linear(input_n, hidden_n), nn.ReLU(), nn.Linear(hidden_n, out_n))でnn.modulesを繋げる。
+
+
+
+
 
