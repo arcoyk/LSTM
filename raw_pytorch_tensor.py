@@ -37,7 +37,7 @@ for t in range(500):
   # Compute and print loss.
   loss = loss_fn(y_pred, y)
   print(t, loss.data[0])
-  losslog.append(t, loss.data[0])
+  losslog.append(loss.data[0])
   
   # Before the backward pass, use the optimizer object to zero all of the
   # gradients for the variables it will update (which are the learnable weights
