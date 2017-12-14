@@ -13,7 +13,7 @@ class Sequence(nn.Module):
         super(Sequence, self).__init__()
         # LSTMCell(input_size, hidden_size)
         # Why?
-        self.L = 50
+        self.L = 100
         self.IN = 2
         self.OUT = 2
         self.lstm1 = nn.LSTMCell(self.IN, self.L)
@@ -80,8 +80,6 @@ if __name__ == '__main__':
     optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
     #begin to train
     # 15 iterations
-    for line in input.data:
-        plot_line(line, c_in='y')
     for i in range(15):
         print('STEP: ', i)
         def closure():
@@ -99,10 +97,10 @@ if __name__ == '__main__':
         print('test loss:', loss.data.numpy()[0])
         for line in pred.data:
             past = line[:-future]
-            # post = line[-future:]
+            post = line[-future:]
             plot_line(past, c_in='r')
-            # plot_line(post, c_in='b')
-        plt.show()
+            plot_line(post, c_in='b')
+        for line in input.data:
+            plot_line(line, c_in='y')
         plt.savefig('predict%d.pdf'%i)
         plt.close()
-        exit()
