@@ -15,7 +15,9 @@ class Sequence(nn.Module):
         self.lstm2 = nn.LSTMCell(51, 1)
 
     def forward(self, input, future = 0):
-        # input.shape() => [97 x 99]
+        # input.data.shape => [97 x 99]
+        # input.size(0) => 97
+        # input.size(1) => 99
         outputs = []
         h_t = Variable(torch.zeros(input.size(0), 51).double(), requires_grad=False)
         c_t = Variable(torch.zeros(input.size(0), 51).double(), requires_grad=False)
@@ -23,6 +25,7 @@ class Sequence(nn.Module):
         c_t2 = Variable(torch.zeros(input.size(0), 1).double(), requires_grad=False)
 
         for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
+            # input_t.data.shape => [97 x 1]
             h_t, c_t = self.lstm1(input_t, (h_t, c_t))
             h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
             outputs += [h_t2]
