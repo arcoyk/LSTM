@@ -13,17 +13,21 @@ class Sequence(nn.Module):
         super(Sequence, self).__init__()
         # LSTMCell(input_size, hidden_size)
         # Why?
-        self.L = 100
-        self.lstm1 = nn.LSTMCell(1, self.L)
-        self.lstm2 = nn.LSTMCell(self.L, 1)
+        self.L = 50
+        self.IN = 2
+        self.OUT = 2
+        self.lstm1 = nn.LSTMCell(self.IN, self.L)
+        self.lstm2 = nn.LSTMCell(self.L, self.OUT)
 
     def forward(self, input, future = 0):
         outputs = []
-        h_t = Variable(torch.zeros(input.size(0), self.L).double(), requires_grad=False)
-        c_t = Variable(torch.zeros(input.size(0), self.L).double(), requires_grad=False)
-        h_t2 = Variable(torch.zeros(input.size(0), 1).double(), requires_grad=False)
-        c_t2 = Variable(torch.zeros(input.size(0), 1).double(), requires_grad=False)
-        for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
+        h_t = Variable(torch.zeros(input.size(1), self.L).double(), requires_grad=False)
+        c_t = Variable(torch.zeros(input.size(1), self.L).double(), requires_grad=False)
+        h_t2 = Variable(torch.zeros(input.size(1), self.OUT).double(), requires_grad=False)
+        c_t2 = Variable(torch.zeros(input.size(1), self.OUT).double(), requires_grad=False)
+        # for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
+        # for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
+        for input_t in input:
             # 3 input and 2 output
             h_t, c_t = self.lstm1(input_t, (h_t, c_t))
             h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
@@ -35,18 +39,31 @@ class Sequence(nn.Module):
         outputs = torch.stack(outputs, 1).squeeze(2)
         return outputs
 
+def traj_load(file_name):
+    rst = []
+    mini_bach = []
+    mini_bach_size = 10
+    with open(file_name) as f:
+        for line in f.read().split('\n'):
+            nums = line.split(' ')
+            if len(nums) == 2:
+                nums = list(map(lambda x:float(x), nums))
+                mini_bach.append(nums)
+                if len(mini_bach) == mini_bach_size:
+                    rst.append(mini_bach)
+                    mini_bach = []
+    rst = np.array(rst)
+    return rst
+
+def plot_line(line, c_in='r', m_in='.'):
+    for p in line:
+        plt.scatter(p[0], p[1], c=c_in, marker=m_in)
+
 if __name__ == '__main__':
-    # set random seed to 0
     np.random.seed(0)
     torch.manual_seed(0)
-    # load data and make training set
-    data = torch.load('traindata.pt')
-    # Each element of data is a fraction of sin wave
-    # data = [[0.2, 0.1 ... 0.2], [0.2, 0.4 ... 0.23] ... [0.1, 0.3 ... 0.5]]
-    # 0.1, 0.2, 0.4, 0.1, 0.3, 0.5
-    # <------- input ------->
-    #      <------ target ------->
-    LL = 50
+    data = traj_load('traj.pt')
+    LL = int(len(data) * 0.5)
     input = Variable(torch.from_numpy(data[:LL, :-1]), requires_grad=False)
     target = Variable(torch.from_numpy(data[:LL, 1:]), requires_grad=False)
     test_input = Variable(torch.from_numpy(data[LL:, :-1]), requires_grad=False)
@@ -63,6 +80,8 @@ if __name__ == '__main__':
     optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
     #begin to train
     # 15 iterations
+    for line in input.data:
+        plot_line(line, c_in='y')
     for i in range(15):
         print('STEP: ', i)
         def closure():
@@ -74,19 +93,16 @@ if __name__ == '__main__':
             return loss
         optimizer.step(closure)
         # begin to predict
-        future = 100
+        future = 9
         pred = seq(test_input, future = future)
         loss = criterion(pred[:, :-future], test_target)
         print('test loss:', loss.data.numpy()[0])
-        # y = pred.data.numpy()
-        # draw the result
-        # plt.plot(input.data[i].numpy())
-        # plt.plot(pred.data[3].numpy())
-        for m in range(10):
-            past = test_input.data[m].numpy()
-            post = pred.data[m].numpy()
-            past = list(past) + list(post)
-            plt.plot(past)
+        for line in pred.data:
+            past = line[:-future]
+            # post = line[-future:]
+            plot_line(past, c_in='r')
+            # plot_line(post, c_in='b')
         plt.show()
         plt.savefig('predict%d.pdf'%i)
         plt.close()
+        exit()
