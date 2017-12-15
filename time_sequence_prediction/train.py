@@ -96,18 +96,18 @@ if __name__ == '__main__':
             return loss
         optimizer.step(closure)
         # begin to predict
-        future = 9
+        future = 100
         pred = seq(test_input, future = future)
         loss = criterion(pred[:, :-future], test_target)
         print('test loss:', loss.data.numpy()[0])
+        for line in input.data:
+            plot_line(line, c_in='b')
         for line in pred.data:
             past = line[:-future]
             post = line[-future:]
             plot_line(past, c_in='g')
             plot_line(post, c_in='r')
-        for line in input.data:
-            plot_line(line, c_in='b')
         plt.savefig('predict%d.pdf'%i)
-        plt.show()
+        # plt.show()
         plt.close()
         # exit()
