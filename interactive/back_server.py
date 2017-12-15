@@ -14,6 +14,7 @@ def push_line(file_name, s):
 class Handler(SimpleHTTPRequestHandler):
   def do_POST(self):
     self.data_string = self.rfile.read(int(self.headers['Content-Length']))
+    self.data_string = self.data_string.decode('utf-8')
     push_line(INPUT_FILE, self.data_string)
     self.send_response(200)
     self.end_headers()
