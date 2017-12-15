@@ -64,50 +64,57 @@ def plot_line(line, c_in='r', m_in='x'):
     for p in line:
         plt.scatter(p[0], p[1], c=c_in, marker=m_in)
 
-if __name__ == '__main__':
-    np.random.seed(0)
-    torch.manual_seed(0)
-    data = traj_load('traj.pt')
-    LL = int(len(data) * 0.8)
-    input = Variable(torch.from_numpy(data[:LL, :-1]), requires_grad=False)
-    target = Variable(torch.from_numpy(data[:LL, 1:]), requires_grad=False)
-    test_input = Variable(torch.from_numpy(data[LL:, :-1]), requires_grad=False)
-    test_target = Variable(torch.from_numpy(data[LL:, 1:]), requires_grad=False)
-    # build the model
-    # This could be RNN
-    seq = Sequence()
-    # nn.Module (parent class) .double() convert float into double
-    seq.double()
-    # Loss function: loss = criterion(nn.output, target)
-    # MSE stands for Mean Square Error
-    criterion = nn.MSELoss()
-    # use pytorch.optim.LBFGS as optimizer since we can load the whole data to train
-    optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
-    #begin to train
-    # 15 iterations
-    for i in range(15):
-        print('STEP: ', i)
-        def closure():
-            optimizer.zero_grad()
-            out = seq(input)
-            loss = criterion(out, target)
-            print('loss:', loss.data.numpy()[0])
-            loss.backward()
-            return loss
-        optimizer.step(closure)
-        # begin to predict
-        future = 100
-        pred = seq(test_input, future = future)
-        loss = criterion(pred[:, :-future], test_target)
-        print('test loss:', loss.data.numpy()[0])
-        for line in input.data:
-            plot_line(line, c_in='b')
-        for line in pred.data:
-            past = line[:-future]
-            post = line[-future:]
-            plot_line(past, c_in='g')
-            plot_line(post, c_in='r')
-        plt.savefig('predict%d.pdf'%i)
-        # plt.show()
-        plt.close()
-        # exit()
+# build the model
+# This could be RNN
+# nn.Module (parent class) .double() convert float into double
+# Loss function: loss = criterion(nn.output, target)
+# use pytorch.optim.LBFGS as optimizer since we can load the whole data to train
+# MSE stands for Mean Square Error
+seq = Sequence()
+seq.double()
+criterion = nn.MSELoss()
+optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
+np.random.seed(0)
+torch.manual_seed(0)
+SRC_FILE = 'traj.pt'
+
+def learn():
+  data = traj_load(SRC_FILE)
+  LL = int(len(data) * 0.8)
+  input = Variable(torch.from_numpy(data[:LL, :-1]), requires_grad=False)
+  target = Variable(torch.from_numpy(data[:LL, 1:]), requires_grad=False)
+  test_input = Variable(torch.from_numpy(data[LL:, :-1]), requires_grad=False)
+  test_target = Variable(torch.from_numpy(data[LL:, 1:]), requires_grad=False)
+#begin to train
+# 15 iterations
+  for i in range(3):
+      print('STEP: ', i)
+      def closure():
+          optimizer.zero_grad()
+          out = seq(input)
+          loss = criterion(out, target)
+          print('loss:', loss.data.numpy()[0])
+          loss.backward()
+          return loss
+      optimizer.step(closure)
+      # begin to predict
+      future = 100
+      pred = seq(test_input, future = future)
+      loss = criterion(pred[:, :-future], test_target)
+      print('test loss:', loss.data.numpy()[0])
+      for line in input.data:
+          plot_line(line, c_in='b')
+      for line in pred.data:
+          past = line[:-future]
+          post = line[-future:]
+          plot_line(past, c_in='g')
+          plot_line(post, c_in='r')
+      plt.savefig('predict%d.pdf'%i)
+      plt.close()
+
+learn()
+
+
+
+
+
