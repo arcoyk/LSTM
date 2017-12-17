@@ -5,11 +5,17 @@ from torch.autograd import Variable
 import torch.optim as optim
 import numpy as np
 import matplotlib
-# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 from threading import Thread
 import time
+
+def split_input_target(line):
+    input, target = line.split(DELIM)
+    input = list(map(lambda x:float(x), input.split(',')))
+    if not target == '':
+        target = list(map(lambda x:float(x), target.split(',')))
+    return input, target
 
 class Sequence(nn.Module):
     def __init__(self):
@@ -76,20 +82,51 @@ criterion = nn.MSELoss()
 optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
 np.random.seed(0)
 torch.manual_seed(0)
-SRC_FILE = 'teach.txt'
+SRC_FILE = 'teacher.txt'
 IN_FILE = 'in.txt'
 OUT_FILE = 'out.txt'
 DELIM = ':'
+BACH_SIZE = 100
+ITERATION = 3
 
+def valid_line(line):
+    return DELIM in line
+
+def load(file_name):
+    input_rst, target_rst = [], []
+    input_bach, target_bach = [], []
+    with open(file_name) as f:
+        lines = f.read().split('\n')
+        for i, line in enumerate(lines):
+            if not valid_line(line):
+                continue
+            input, target = split_input_target(line)
+            input_bach.append(input)
+            target_bach.append(input)
+            if i % BACH_SIZE:
+                input_rst.append(input_bach)
+                target_rst.append(target_bach)
+    input_rst = np.array(input_rst)
+    target_rst = np.array(target_rst)
+    return input_rst, target_rst
+
+def list2variable(a):
+    return Variable(torch.from_numpy(a[:LL]), requires_grad=False)
+
+MIN_CNT_BACH = 10
 def learn():
-    data = traj_load(SRC_FILE)
+    input, target = load(SRC_FILE)
+    if len(input) < MIN_CNT_BACH:
+      print("Data not enough. Records must be >", MIN_CNT_BACH * BACH_SIZE)
+      return
+    print(input, target)        
+    exit()
     LL = int(len(data) * 0.8)
-    input, target = input_target(data)
-    input = Variable(torch.from_numpy(input[:LL]), requires_grad=False)
-    target = Variable(torch.from_numpy(target[:LL]), requires_grad=False)
-    test_input = Variable(torch.from_numpy(input[LL:]), requires_grad=False)
-    test_target = Variable(torch.from_numpy(target[LL:]), requires_grad=False)
-    for i in range(3):
+    input = list2variable(input[:LL])
+    target = list2variable(target[:LL])
+    test_input = list2variable(input[LL:])
+    test_target = list2variable(target[LL:])
+    for i in range(ITERATION):
         print('STEP: ', i)
         def closure():
             optimizer.zero_grad()
@@ -114,17 +151,12 @@ def learn():
         plt.savefig('predict%d.pdf'%i)
         plt.close()
 
+learn()
+
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
         f.write('\n')
         f.write(s)
-
-def split_input_target(line):
-    input, target = line.split(DELIM)
-    input = list(map(lambda x:float(x), input.split(',')))
-    if not target == '':
-        target = list(map(lambda x:float(x), target.split(',')))
-    return input, target
 
 def join_input_target(input, target):
     input = ','.join(map(str, input))
@@ -141,15 +173,14 @@ def my_learn(input, target):
         print('STEP', i)
         time.sleep(1)
 
-def learn_and_answer(data):
-    input, target = split_input_target(data)
+def learn_and_answer(line):
+    if not valid_line(line):
+        return "invalid line:" + line
+    input, target = split_input_target(line)
     if target != '':
         th = Thread(target=my_learn, args=(input, target))
         th.start()
     return my_answer(input)
-
-p = learn_and_answer("32.43,0.342:0.23,0.433")
-print(p)
 
 """
 def watch():
