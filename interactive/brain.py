@@ -8,6 +8,7 @@ import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
+from threading import Thread
 import time
 
 class Sequence(nn.Module):
@@ -78,6 +79,7 @@ torch.manual_seed(0)
 SRC_FILE = 'teach.txt'
 IN_FILE = 'in.txt'
 OUT_FILE = 'out.txt'
+DELIM = ':'
 
 def learn():
     data = traj_load(SRC_FILE)
@@ -112,36 +114,12 @@ def learn():
         plt.savefig('predict%d.pdf'%i)
         plt.close()
 
-def predict(input):
-    return seq(input)
-
-DELIM = ':'
-INPUT_ONLY = 0
-DELIM_NOT_FOUND = 1
-DELIM_FOUND = 2
-in_file_timestamp = 0
-def file_updated():
-    global in_file_timestamp
-    curr = os.path.getmtime(IN_FILE)
-    if in_file_timestamp != curr:
-        in_file_timestamp = curr
-        return True
-    return False
-
-def last_line(file_name):
-    with open(file_name) as f:
-        lines = f.read().split('\n')
-        for i in range(len(lines)):
-            line = lines[-(i+1)]
-            if DELIM in line:
-                return line
-
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
         f.write('\n')
         f.write(s)
 
-def input_target(line):
+def split_input_target(line):
     input, target = line.split(DELIM)
     input = list(map(lambda x:float(x), input.split(',')))
     if not target == '':
@@ -153,14 +131,27 @@ def join_input_target(input, target):
     target = ','.join(map(str, target))
     return input + DELIM + target
 
-def my_predict(input):
+def my_answer(input):
     return input
 
-def my_learn():
-    for i in range(10):
+def my_learn(input, target):
+    line = join_input_target(input, target)
+    push_last_line(OUT_FILE, line)
+    for i in range(3):
         print('STEP', i)
-        time.sleep(5)
+        time.sleep(1)
 
+def learn_and_answer(data):
+    input, target = split_input_target(data)
+    if target != '':
+        th = Thread(target=my_learn, args=(input, target))
+        th.start()
+    return my_answer(input)
+
+p = learn_and_answer("32.43,0.342:0.23,0.433")
+print(p)
+
+"""
 def watch():
     while True:
         if file_updated():
@@ -177,6 +168,4 @@ def watch():
                 push_last_line(SRC_FILE, line)
                 my_learn()
                 print('learned')
-
-watch()
-
+"""

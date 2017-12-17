@@ -9,12 +9,12 @@ import time
 import random
 from threading import Thread
 
-def printh():
+def printh(name):
   for i in range(100):
     time.sleep(random.random() * 10)
-    print(i)
+    print(name, i)
 
-th1 = Thread(target=printh)
-th2 = Thread(target=printh)
+th1 = Thread(target=printh, args=('Kate',))
+th2 = Thread(target=printh, args=('John',))
 th1.start()
 th2.start()
