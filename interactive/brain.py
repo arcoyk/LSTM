@@ -49,27 +49,6 @@ class Sequence(nn.Module):
             outputs += [h_t2]
         outputs = torch.stack(outputs, 1).squeeze(2)
         return outputs
-
-def traj_load(file_name):
-    rst = []
-    mini_bach = []
-    mini_bach_size = 100
-    with open(file_name) as f:
-        for line in f.read().split('\n'):
-            nums = line.split(' ')
-            if len(nums) == 2:
-                nums = list(map(lambda x:float(x), nums))
-                mini_bach.append(nums)
-                if len(mini_bach) == mini_bach_size:
-                    rst.append(mini_bach)
-                    mini_bach = []
-    rst = np.array(rst)
-    return rst
-
-def plot_line(line, c_in='r', m_in='x'):
-    for p in line:
-        plt.scatter(p[0], p[1], c=c_in, marker=m_in)
-
 # build the model
 # This could be RNN
 # nn.Module (parent class) .double() convert float into double
@@ -97,35 +76,41 @@ def load(file_name):
     input_bach, target_bach = [], []
     with open(file_name) as f:
         lines = f.read().split('\n')
-        for i, line in enumerate(lines):
+        for line in lines:
             if not valid_line(line):
                 continue
             input, target = split_input_target(line)
             input_bach.append(input)
-            target_bach.append(input)
-            if i % BACH_SIZE:
+            target_bach.append(target)
+            if len(input_bach) >= BACH_SIZE:
                 input_rst.append(input_bach)
                 target_rst.append(target_bach)
+                input_bach = []
+                target_bach = []
     input_rst = np.array(input_rst)
     target_rst = np.array(target_rst)
     return input_rst, target_rst
 
 def list2variable(a):
-    return Variable(torch.from_numpy(a[:LL]), requires_grad=False)
+    return Variable(torch.from_numpy(a), requires_grad=False)
 
 MIN_CNT_BACH = 10
+
+# Candidate to remove
+def plot_line(line, c_in='r', m_in='x'):
+    for p in line:
+        plt.scatter(p[0], p[1], c=c_in, marker=m_in)
+
 def learn():
-    input, target = load(SRC_FILE)
-    if len(input) < MIN_CNT_BACH:
-      print("Data not enough. Records must be >", MIN_CNT_BACH * BACH_SIZE)
-      return
-    print(input, target)        
-    exit()
-    LL = int(len(data) * 0.8)
-    input = list2variable(input[:LL])
-    target = list2variable(target[:LL])
-    test_input = list2variable(input[LL:])
-    test_target = list2variable(target[LL:])
+    input_src, target_src = load(SRC_FILE)
+    if len(input_src) < MIN_CNT_BACH:
+        print("Data not enough. Records must be >", MIN_CNT_BACH * BACH_SIZE)
+        return
+    LL = int(len(input_src) * 0.5)
+    input = list2variable(input_src[:LL])
+    target = list2variable(target_src[:LL])
+    test_input = list2variable(input_src[LL:])
+    test_target = list2variable(target_src[LL:])
     for i in range(ITERATION):
         print('STEP: ', i)
         def closure():
@@ -151,8 +136,6 @@ def learn():
         plt.savefig('predict%d.pdf'%i)
         plt.close()
 
-learn()
-
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
         f.write('\n')
@@ -164,7 +147,7 @@ def join_input_target(input, target):
     return input + DELIM + target
 
 def my_answer(input):
-    return input
+    return seq(input)
 
 def my_learn(input, target):
     line = join_input_target(input, target)
@@ -182,21 +165,3 @@ def learn_and_answer(line):
         th.start()
     return my_answer(input)
 
-"""
-def watch():
-    while True:
-        if file_updated():
-            line = last_line(IN_FILE)
-            if not DELIM in line:
-                continue
-            input, target = input_target(line)
-            if target == '':
-                out = my_predict(input)
-                s = join_input_target(input, out)
-                push_last_line(OUT_FILE, s)
-                print('answered')
-            else:
-                push_last_line(SRC_FILE, line)
-                my_learn()
-                print('learned')
-"""
