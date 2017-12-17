@@ -20,5 +20,5 @@ class Handler(SimpleHTTPRequestHandler):
 host = 'localhost'
 port = 8000
 httpd = HTTPServer((host, port), Handler)
-print('braing to network interface working@%d' % port)
+print('brain to network interface working@%d' % port)
 httpd.serve_forever()
