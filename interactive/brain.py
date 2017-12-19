@@ -66,7 +66,7 @@ IN_FILE = 'in.txt'
 OUT_FILE = 'out.txt'
 DELIM = ':'
 BACH_SIZE = 100
-ITERATION = 3
+ITERATION = 14
 
 def valid_line(line):
     return DELIM in line
@@ -101,6 +101,17 @@ def plot_line(line, c_in='r', m_in='x'):
     for p in line:
         plt.scatter(p[0], p[1], c=c_in, marker=m_in)
 
+def saveplt(input, future, name):
+    for line in input.data:
+        plot_line(line, c_in='b')
+    for line in pred.data:
+        past = line[:-future]
+        post = line[-future:]
+        plot_line(past, c_in='g')
+        plot_line(post, c_in='r')
+    plt.savefig(name)
+    plt.close()
+
 def learn():
     input_src, target_src = load(SRC_FILE)
     if len(input_src) < MIN_CNT_BACH:
@@ -121,20 +132,11 @@ def learn():
             loss.backward()
             return loss
         optimizer.step(closure)
-        # begin to predict
-        future = 100
+        future = 10
         pred = seq(test_input, future = future)
         loss = criterion(pred[:, :-future], test_target)
         print('test loss:', loss.data.numpy()[0])
-        for line in input.data:
-            plot_line(line, c_in='b')
-        for line in pred.data:
-            past = line[:-future]
-            post = line[-future:]
-            plot_line(past, c_in='g')
-            plot_line(post, c_in='r')
-        plt.savefig('predict%d.pdf'%i)
-        plt.close()
+        saveplt(input, future, 'predict%d.pdf' % i)
 
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
@@ -147,14 +149,15 @@ def join_input_target(input, target):
     return input + DELIM + target
 
 def my_answer(input):
-    return seq(input)
+    input = np.array([[input]])
+    input = list2variable(input)
+    rst = seq(input)
+    return list(rst.data[0][0])
 
 def my_learn(input, target):
     line = join_input_target(input, target)
     push_last_line(OUT_FILE, line)
-    for i in range(3):
-        print('STEP', i)
-        time.sleep(1)
+    learn()
 
 def learn_and_answer(line):
     if not valid_line(line):
@@ -165,3 +168,5 @@ def learn_and_answer(line):
         th.start()
     return my_answer(input)
 
+# learn()
+# print(my_answer([0.423,0.432]))
