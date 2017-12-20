@@ -17,8 +17,8 @@ class Handler(SimpleHTTPRequestHandler):
     print('returning', rst)
     return
 
-host = 'localhost'
-port = 8000
-httpd = HTTPServer((host, port), Handler)
-print('brain to network interface working@%d' % port)
+HOST = 'localhost'
+PORT = 9000
+httpd = HTTPServer((HOST, PORT), Handler)
+print('Backend brain alive 🔥 ', HOST, ':', PORT)
 httpd.serve_forever()

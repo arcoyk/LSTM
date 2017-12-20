@@ -1,8 +1,9 @@
 import requests
 import os
-SERVER = 'http://localhost:8000'
+HOST = 'localhost'
+PORT = 9000
 IN_FILE = 'input.bytes'
-OUT_FILE = 'out.bytes'
+OUT_FILE = 'output.bytes'
 
 prev = 0
 def in_file_updated():
@@ -18,13 +19,17 @@ def update_out_file():
   with open(IN_FILE) as f:
     # Last line
     in_data = f.read().split('\n')[-1]
-  print('POSTing...')
-  res = requests.post(SERVER, data=in_data)
-  with open(OUT_FILE, 'w') as f:
-    print('Saved response:', res.text)
-    f.write(res.text)
+  try:
+    print('> ', in_data)
+    res = requests.post(SERVER, data=in_data)
+    with open(OUT_FILE, 'w') as f:
+      print('< ', res.text)
+      f.write(res.text)
+  except:
+    print('Backend server not responding')
 
-print("Front file alive ⚡️")
+print("Frontend sockets alive ⚡️")
+print("Expecting backend ", HOST, ':', PORT)
 while True:
   if in_file_updated():
     update_out_file()
