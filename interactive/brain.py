@@ -10,10 +10,13 @@ import os
 from threading import Thread
 import time
 
+def valid_sample(sample):
+    return not sample in ['', '\n']
+
 def split_input_target(line):
     input, target = line.split(DELIM)
     input = list(map(lambda x:float(x), input.split(',')))
-    if not target == '':
+    if valid_sample(target):
         target = list(map(lambda x:float(x), target.split(',')))
     return input, target
 
@@ -152,25 +155,22 @@ def join_input_target(input, target):
     target = ','.join(map(str, target))
     return input + DELIM + target
 
-def my_answer(input):
+def answer(input):
     input = np.array([[input]])
     input = list2variable(input)
     rst = seq(input)
     return list(rst.data[0][0])
 
-def my_learn(input, target):
-    line = join_input_target(input, target)
-    push_last_line(OUT_FILE, line)
-    learn()
-
+learning_thread = Thread(target=learn)
 def learn_and_answer(line):
     if not valid_line(line):
         return "invalid line:" + line
     input, target = split_input_target(line)
-    if target != '':
-        th = Thread(target=my_learn, args=(input, target))
-        th.start()
-    return my_answer(input)
+    if valid_sample(target):
+       push_last_line(OUT_FILE, line)
+       if not learning_thread.isAlive():
+          learning_thread.start()
+    return ','.join(map(str, answer(input)))
 
 # learn()
 # print(my_answer([0.423,0.432]))

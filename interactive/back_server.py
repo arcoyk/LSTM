@@ -18,7 +18,7 @@ class Handler(SimpleHTTPRequestHandler):
     return
 
 HOST = 'localhost'
-PORT = 9000
+PORT = 8000
 httpd = HTTPServer((HOST, PORT), Handler)
 print('Backend brain alive 🔥 ', HOST, ':', PORT)
 httpd.serve_forever()
