@@ -21,7 +21,7 @@ class Sequence(nn.Module):
     def __init__(self):
         super(Sequence, self).__init__()
         # LSTMCell(input_size, hidden_size)
-        self.L = 10
+        self.L = HLS
         self.IN = 2
         self.OUT = 2
         self.lstm1 = nn.LSTMCell(self.IN, self.L)
@@ -55,19 +55,22 @@ class Sequence(nn.Module):
 # Loss function: loss = criterion(nn.output, target)
 # use pytorch.optim.LBFGS as optimizer since we can load the whole data to train
 # MSE stands for Mean Square Error
-seq = Sequence()
-seq.double()
-criterion = nn.MSELoss()
-optimizer = optim.LBFGS(seq.parameters(), lr=0.8)
-np.random.seed(0)
-torch.manual_seed(0)
 SRC_FILE = 'teacher.txt'
 IN_FILE = 'in.txt'
 OUT_FILE = 'out.txt'
 DELIM = ':'
 BACH_SIZE = 100
 ITERATION = 14
+LR = 1.0
+TL = 0.9 # To Learn: rate to spare for learning 1.0 - TL will be in test
+HLS = 100 # Hidden Layer Size in each LSTM gate
 
+seq = Sequence()
+seq.double()
+criterion = nn.MSELoss()
+optimizer = optim.LBFGS(seq.parameters(), lr=LR)
+np.random.seed(0)
+torch.manual_seed(0)
 def valid_line(line):
     return DELIM in line
 
@@ -101,7 +104,7 @@ def plot_line(line, c_in='r', m_in='x'):
     for p in line:
         plt.scatter(p[0], p[1], c=c_in, marker=m_in)
 
-def saveplt(input, future, name):
+def saveplt(input, pred, future, name):
     for line in input.data:
         plot_line(line, c_in='b')
     for line in pred.data:
@@ -115,9 +118,10 @@ def saveplt(input, future, name):
 def learn():
     input_src, target_src = load(SRC_FILE)
     if len(input_src) < MIN_CNT_BACH:
-        print("Data not enough. Records must be >", MIN_CNT_BACH * BACH_SIZE)
+        print("Samples (about): ", len(input_src) * BACH_SIZE)
+        print("Data not enough. Samples must be >", MIN_CNT_BACH * BACH_SIZE)
         return
-    LL = int(len(input_src) * 0.5)
+    LL = int(len(input_src) * TL)
     input = list2variable(input_src[:LL])
     target = list2variable(target_src[:LL])
     test_input = list2variable(input_src[LL:])
@@ -136,7 +140,7 @@ def learn():
         pred = seq(test_input, future = future)
         loss = criterion(pred[:, :-future], test_target)
         print('test loss:', loss.data.numpy()[0])
-        saveplt(input, future, 'predict%d.pdf' % i)
+        saveplt(input, pred, future, 'predict%d.pdf' % i)
 
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
