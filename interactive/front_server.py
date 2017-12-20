@@ -26,8 +26,9 @@ def update_out_file():
   print('> ', in_data)
   res = requests.post(BACKEND, data=in_data)
   with open(OUT_FILE, 'a') as f:
-    print('< ', res.text)
-    f.write(res.text + '\n')
+    res = res.text.replace('"', '') + '\n'
+    print('< ', res)
+    f.write(res)
 
 print("Frontend sockets alive ⚡️")
 print("Expecting backend ", BACKEND)

@@ -63,7 +63,7 @@ IN_FILE = 'in.txt'
 OUT_FILE = 'out.txt'
 DELIM = ':'
 BACH_SIZE = 100
-ITERATION = 14
+ITERATION = 1
 LR = 1.0
 TL = 0.9 # To Learn: rate to spare for learning 1.0 - TL will be in test
 HLS = 100 # Hidden Layer Size in each LSTM gate
@@ -168,8 +168,10 @@ def learn_and_answer(line):
     input, target = split_input_target(line)
     if valid_sample(target):
        push_last_line(OUT_FILE, line)
-       if not learning_thread.isAlive():
+       try:
           learning_thread.start()
+       except RuntimeError:
+          print("Still learning...")
     return ','.join(map(str, answer(input)))
 
 # learn()
