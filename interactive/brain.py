@@ -7,8 +7,9 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-from threading import Thread
+from threading import (Event, Thread)
 import time
+event = Event()
 
 def valid_sample(sample):
     return not sample in ['', '\n']
@@ -119,6 +120,8 @@ def saveplt(input, pred, future, name):
     plt.close()
 
 def learn():
+    # event.wait untikl event.set
+    event.wait()
     input_src, target_src = load(SRC_FILE)
     if len(input_src) < MIN_CNT_BACH:
         print("Samples (about): ", len(input_src) * BACH_SIZE)
@@ -144,6 +147,8 @@ def learn():
         loss = criterion(pred[:, :-future], test_target)
         print('test loss:', loss.data.numpy()[0])
         saveplt(input, pred, future, 'predict%d.pdf' % i)
+    event.clear()
+    learn()
 
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
@@ -161,17 +166,16 @@ def answer(input):
     rst = seq(input)
     return list(rst.data[0][0])
 
-learning_thread = Thread(target=learn)
 def learn_and_answer(line):
-    global learning_thread
     if not valid_line(line):
         return "invalid line:" + line
     input, target = split_input_target(line)
     if valid_sample(target):
        push_last_line(OUT_FILE, line)
-       if not learning_thread.isAlive():
-          learning_thread = Thread(target=learn)
-          learning_thread.start()
+       event.set() # Restart learning_thread
     return ','.join(map(str, answer(input)))
+
+learning_thread = Thread(target=learn)
+learning_thread.start()
 # learn()
 # print(my_answer([0.423,0.432]))

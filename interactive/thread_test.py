@@ -7,7 +7,9 @@
 
 import time
 import random
-from threading import Thread
+from threading import (Event, Thread)
+event = Event()
+
 def printh(name):
   for i in range(3):
     time.sleep(random.random() * 10)
@@ -23,7 +25,4 @@ while True:
   th2_a = th2.isAlive()
   print(th1_a, th2_a)
   if (not th1_a) and (not th2_a) and input() == 'again':
-    th2 = Thread(target=printh, args=('John',))
-    th1 = Thread(target=printh, args=('Kate',))
-    th1.start()
-    th2.start()
+    event.
