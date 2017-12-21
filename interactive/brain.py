@@ -59,9 +59,7 @@ class Sequence(nn.Module):
 # Loss function: loss = criterion(nn.output, target)
 # use pytorch.optim.LBFGS as optimizer since we can load the whole data to train
 # MSE stands for Mean Square Error
-SRC_FILE = 'teacher.txt'
-IN_FILE = 'in.txt'
-OUT_FILE = 'out.txt'
+TEACHER_FILE = 'teacher.txt'
 DELIM = ':'
 BACH_SIZE = 100
 ITERATION = 1
@@ -120,9 +118,9 @@ def saveplt(input, pred, future, name):
     plt.close()
 
 def learn():
-    # event.wait untikl event.set
+    # event.wait until event.set
     event.wait()
-    input_src, target_src = load(SRC_FILE)
+    input_src, target_src = load(TEACHER_FILE)
     if len(input_src) < MIN_CNT_BACH:
         print("Samples (about): ", len(input_src) * BACH_SIZE)
         print("Data not enough. Samples must be >", MIN_CNT_BACH * BACH_SIZE)
@@ -171,11 +169,11 @@ def learn_and_answer(line):
         return "invalid line:" + line
     input, target = split_input_target(line)
     if valid_sample(target):
-       push_last_line(OUT_FILE, line)
+       print(line)
+       push_last_line(TEACHER_FILE, line)
        event.set() # Restart learning_thread
     return ','.join(map(str, answer(input)))
 
 learning_thread = Thread(target=learn)
 learning_thread.start()
-# learn()
-# print(my_answer([0.423,0.432]))
+event.set()
