@@ -8,17 +8,22 @@
 import time
 import random
 from threading import Thread
-
 def printh(name):
-  for i in range(4):
+  for i in range(3):
     time.sleep(random.random() * 10)
     print(name, i)
 
-th1 = Thread(target=printh, args=('Kate',))
 th2 = Thread(target=printh, args=('John',))
+th1 = Thread(target=printh, args=('Kate',))
 th1.start()
 th2.start()
 while True:
   time.sleep(1)
-  print(th1.isAlive())
-  print(th2.isAlive())
+  th1_a = th1.isAlive()
+  th2_a = th2.isAlive()
+  print(th1_a, th2_a)
+  if (not th1_a) and (not th2_a) and input() == 'again':
+    th2 = Thread(target=printh, args=('John',))
+    th1 = Thread(target=printh, args=('Kate',))
+    th1.start()
+    th2.start()

@@ -1,6 +1,5 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-import urllib.request
-from urllib.parse import urlparse
+import urllib.parse as parser
 import json
 import brain
 
@@ -8,13 +7,19 @@ class Handler(SimpleHTTPRequestHandler):
   def do_POST(self):
     self.data_string = self.rfile.read(int(self.headers['Content-Length']))
     self.send_response(200)
-    self.end_headers()
     data = self.data_string.decode('utf-8')
-    rst = brain.learn_and_answer(data)
+    data = parser.parse_qs(data)
+    if not 'q' in data.keys():
+      self.send_response(500)
+      self.end_headers()
+      return
+    line = data['q'][0]
+    rst = brain.learn_and_answer(line)
     rst = json.dumps(rst)
     body = bytes(rst, 'utf-8')
-    self.wfile.write(body)
     print('returning', rst)
+    self.end_headers()
+    self.wfile.write(body)
     return
 
 HOST = 'localhost'

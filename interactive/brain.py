@@ -163,16 +163,15 @@ def answer(input):
 
 learning_thread = Thread(target=learn)
 def learn_and_answer(line):
+    global learning_thread
     if not valid_line(line):
         return "invalid line:" + line
     input, target = split_input_target(line)
     if valid_sample(target):
        push_last_line(OUT_FILE, line)
-       try:
+       if not learning_thread.isAlive():
+          learning_thread = Thread(target=learn)
           learning_thread.start()
-       except RuntimeError:
-          print("Still learning...")
     return ','.join(map(str, answer(input)))
-
 # learn()
 # print(my_answer([0.423,0.432]))
