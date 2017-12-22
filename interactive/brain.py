@@ -65,7 +65,7 @@ BACH_SIZE = 100
 ITERATION = 1
 LR = 1.0
 TL = 0.9 # To Learn: rate to spare for learning 1.0 - TL will be in test
-HLS = 100 # Hidden Layer Size in each LSTM gate
+HLS = 50 # Hidden Layer Size in each LSTM gate
 
 seq = Sequence()
 seq.double()
@@ -118,35 +118,36 @@ def saveplt(input, pred, future, name):
     plt.close()
 
 def learn():
-    # event.wait until event.set
-    event.wait()
-    input_src, target_src = load(TEACHER_FILE)
-    if len(input_src) < MIN_CNT_BACH:
-        print("Samples (about): ", len(input_src) * BACH_SIZE)
-        print("Data not enough. Samples must be >", MIN_CNT_BACH * BACH_SIZE)
-        return
-    LL = int(len(input_src) * TL)
-    input = list2variable(input_src[:LL])
-    target = list2variable(target_src[:LL])
-    test_input = list2variable(input_src[LL:])
-    test_target = list2variable(target_src[LL:])
-    for i in range(ITERATION):
-        print('STEP: ', i)
-        def closure():
-            optimizer.zero_grad()
-            out = seq(input)
-            loss = criterion(out, target)
-            print('loss:', loss.data.numpy()[0])
-            loss.backward()
-            return loss
-        optimizer.step(closure)
-        future = 10
-        pred = seq(test_input, future = future)
-        loss = criterion(pred[:, :-future], test_target)
-        print('test loss:', loss.data.numpy()[0])
-        saveplt(input, pred, future, 'predict%d.pdf' % i)
-    event.clear()
-    learn()
+    while True:
+        event.wait()
+        input_src, target_src = load(TEACHER_FILE)
+        if len(input_src) < MIN_CNT_BACH:
+            # print("Samples (about): ", len(input_src) * BACH_SIZE)
+            # print("Data not enough. Samples must be >", MIN_CNT_BACH * BACH_SIZE)
+            pass
+        else:
+            LL = int(len(input_src) * TL)
+            input = list2variable(input_src[:LL])
+            target = list2variable(target_src[:LL])
+            test_input = list2variable(input_src[LL:])
+            test_target = list2variable(target_src[LL:])
+            for i in range(ITERATION):
+                print('STEP: ', i)
+                def closure():
+                    optimizer.zero_grad()
+                    out = seq(input)
+                    loss = criterion(out, target)
+                    print('loss:', loss.data.numpy()[0])
+                    loss.backward()
+                    return loss
+                optimizer.step(closure)
+                future = 10
+                pred = seq(test_input, future = future)
+                loss = criterion(pred[:, :-future], test_target)
+                print('test loss:', loss.data.numpy()[0])
+                # saveplt(input, pred, future, 'predict%d.pdf' % i)
+        print("End of iteration")
+        event.clear()
 
 def push_last_line(file_name, s):
     with open(file_name, 'a') as f:
@@ -169,11 +170,10 @@ def learn_and_answer(line):
         return "invalid line:" + line
     input, target = split_input_target(line)
     if valid_sample(target):
-       print(line)
        push_last_line(TEACHER_FILE, line)
        event.set() # Restart learning_thread
     return ','.join(map(str, answer(input)))
 
 learning_thread = Thread(target=learn)
+event.clear()
 learning_thread.start()
-event.set()

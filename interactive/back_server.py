@@ -17,7 +17,7 @@ class Handler(SimpleHTTPRequestHandler):
     rst = brain.learn_and_answer(line)
     rst = json.dumps(rst)
     body = bytes(rst, 'utf-8')
-    print('returning', rst)
+    # print('returning', rst)
     self.end_headers()
     self.wfile.write(body)
     return
