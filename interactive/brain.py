@@ -63,8 +63,8 @@ TEACHER_FILE = 'teacher.txt'
 DELIM = ':'
 BACH_SIZE = 100
 ITERATION = 1
-LR = 1.0
-TL = 0.9 # To Learn: rate to spare for learning 1.0 - TL will be in test
+LR = 1.0 # Learning rate
+TL = 0.8 # To Learn: rate to spare for learning 1.0 - TL will be in test
 HLS = 50 # Hidden Layer Size in each LSTM gate
 
 seq = Sequence()
